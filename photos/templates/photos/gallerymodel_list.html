@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block content %}
+    {% if gallery_list %}
+        <div class="gallery-list">
+            {% for gallery in gallery_list %}
+                <a class="card black-text" style="display: inline-block"
+                   href="{% url 'gallery-detail' gallery.slug %}">
+                    {% with photo=gallery.get_random_photo %}
+                        <div class="sample card-img-top" style="background-image: url('{{ photo.get_display_url }}')"></div>
+                    {% endwith %}
+                    <div class="card-body">
+                        <h4 class="card-title">{{ gallery.title }}</h4>
+                        <p class="card-text">{{ gallery.description }}</p>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <h1>{% trans 'There are no photos to show' %}</h1>
+    {% endif %}
+    <a class="btn btn-elegant mt-4" href="{% url 'gallery_create' %}">{% trans 'Add a gallery' %}</a>
+{% endblock content %}

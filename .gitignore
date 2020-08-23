@@ -1,0 +1,6 @@
+.idea
+django_photos/media
+__pycache__
+dist
+django_photos.egg-info
+db.sqlite3

@@ -1,0 +1,11 @@
+{% load i18n %}
+<div id="upload-widget" class="{{widget.attrs.class}} dropzone">
+    <div class="fallback">
+        <input id="{{ widget.attrs.id }}" name="{{ widget.name }}" type="file" multiple/>
+    </div>
+    <div class="dz-message" data-dz-message>
+        <div>{% trans 'Drop your files here' %}</div>
+        <div class="small">{% trans 'Upload pictures or a zip-file' %}</div>
+    </div>
+</div>
+{{ options|json_script:widget.attrs.class}}

@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block content %}
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="btn btn-elegant" type="submit">{% trans 'Save' %}</button>
+    </form>
+    {{ form.media }}
+{% endblock content %}

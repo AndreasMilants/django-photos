@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div id="gallery" class="image-gallery">
+        {% for photo in photo_list %}
+            <a href="{{ photo.image.url }}" class="image-in-gallery"
+               style="background-image: url('{{ photo.get_display_url }}')"></a>
+        {% endfor %}
+    </div>
+{% endblock %}
