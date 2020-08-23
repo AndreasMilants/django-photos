@@ -11,7 +11,7 @@ Quick start
 
     INSTALLED_APPS = [
         ...
-        'polls',
+        'photos',
     ]
 
 2. Run ``python manage.py makemigrations photos`` and ``python manage.py migrate`` to create the models.
