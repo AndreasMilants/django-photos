@@ -4,8 +4,6 @@ Photos
 
 Photos is a Django app, made for creating galleries.
 
-Detailed documentation is in the "docs" directory.
-
 Quick start
 -----------
 
