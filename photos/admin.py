@@ -5,7 +5,7 @@ from django.template.response import TemplateResponse
 from django.contrib.admin import helpers
 from .models import PHOTO_MODEL, GALLERY_MODEL
 from django.urls import path
-from .views import UploadPhotoView, UploadPhotosAdminView, UploadGalleryAdminView
+from .views import UploadPhotoApiView, UploadPhotosAdminView, UploadGalleryAdminView
 from .forms import SinglePhotoForm, GalleryForm
 from django.utils.translation import ugettext_lazy as _
 from django.db.models import Count
@@ -77,7 +77,7 @@ class GalleryAdmin(admin.ModelAdmin):
             path('delete-with-photos/', self._delete_with_photos, name='delete_with_photos'),
             path('upload-photos/', UploadPhotosAdminView.as_view(extra_context_func=self.gallery_admin_context),
                  name='images_upload'),
-            path('upload-photo/', UploadPhotoView.as_view(), name='image_upload')
+            path('upload-photo/', UploadPhotoApiView.as_view(), name='image_upload')
         ]
         return custom_urls + super().get_urls()
 

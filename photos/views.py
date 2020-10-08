@@ -9,6 +9,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMix
 from django.utils.translation import ugettext_lazy as _
 import os
 from .utils import handle_zip
+from .mixins import StaffRequiredMixin
 
 PHOTO_APP_LABEL = PHOTO_MODEL._meta.app_label
 GALLERY_APP_LABEL = GALLERY_MODEL._meta.app_label
@@ -24,8 +25,7 @@ if USE_CELERY:
     from .tasks import parse_zip
 
 
-class UploadPhotosView(LoginRequiredMixin, PermissionRequiredMixin, generic.CreateView):
-    permission_required = (CREATE_PHOTO_PERMISSION_NAME, CREATE_GALLERY_PERMISSION_NAME)
+class UploadPhotosView(generic.CreateView):
     form_class = UploadPhotosToNewGalleryForm
     template_name = 'photos/gallerymodel_create.html'
     success_url = reverse_lazy('gallery_create')
@@ -53,9 +53,11 @@ class UploadPhotosView(LoginRequiredMixin, PermissionRequiredMixin, generic.Crea
             " a get_absolute_url method on the GalleryModel.")
 
 
-class UploadPhotoView(LoginRequiredMixin, PermissionRequiredMixin, View):
-    permission_required = (CREATE_PHOTO_PERMISSION_NAME,)
+class UploadPhotosWithPermissionView(LoginRequiredMixin, PermissionRequiredMixin, UploadPhotosView):
+    permission_required = (CREATE_PHOTO_PERMISSION_NAME, CREATE_GALLERY_PERMISSION_NAME)
 
+
+class UploadPhotoApiView(View):
     def post(self, request, *args, **kwargs):
         try:
             file = request.FILES.get('file')
@@ -75,6 +77,10 @@ class UploadPhotoView(LoginRequiredMixin, PermissionRequiredMixin, View):
         except Exception as e:
             print(e)
             return HttpResponse(_('Could not process file'), status=500)
+
+
+class UploadPhotoWithPermissionApiView(LoginRequiredMixin, PermissionRequiredMixin, UploadPhotoApiView):
+    permission_required = (CREATE_PHOTO_PERMISSION_NAME,)
 
 
 class GalleryListView(generic.ListView):
@@ -98,7 +104,7 @@ class GalleryPhotosView(generic.ListView):
 # AdminViews
 
 
-class UploadPhotosAdminView(UploadPhotosView):
+class UploadPhotosAdminView(StaffRequiredMixin, UploadPhotosWithPermissionView):
     template_name = 'admin/photos/photomodel/upload_photos.html'
     success_url = reverse_lazy('admin:{}_{}_changelist'.format(GALLERY_APP_LABEL, GALLERY_MODEL_NAME))
     form_class = UploadPhotosToExistingGalleryAdminForm
