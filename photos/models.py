@@ -7,7 +7,7 @@ from django.utils.safestring import mark_safe
 from django.utils.text import slugify
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
-from django.core.files.storage import default_storage, FileSystemStorage
+from django.core.files.storage import default_storage
 from PIL import Image
 from django.utils.encoding import force_str
 import os
@@ -21,7 +21,7 @@ import logging
 logger = logging.getLogger('photos.models')
 
 IMAGE_STORAGE = getattr(settings, 'PHOTOS_IMAGE_STORAGE', default_storage)
-TEMP_FILE_STORAGE = getattr(settings, 'PHOTOS_TEMP_FILE_STORAGE', FileSystemStorage())
+TEMP_FILE_STORAGE = getattr(settings, 'PHOTOS_TEMP_FILE_STORAGE', default_storage)
 IMAGE_SIZES = {'admin_thumbnail': (100, 100)}
 _IMAGE_SIZES = getattr(settings, 'PHOTOS_IMAGE_SIZES', {'display': (500, 500),
                                                         'hd': (1920, 1080)})  # (Width, Height)
