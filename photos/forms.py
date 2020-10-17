@@ -16,12 +16,16 @@ if USE_CELERY:
 class BaseUploadPhotosToGalleryForm(forms.Form):
     upload_id = forms.UUIDField(widget=forms.HiddenInput, initial=uuid4)
     new_photos = forms.FileField(widget=DropzoneWidget(options={'url': reverse_lazy('image_upload')}),
-                                 required=False, label='')
+                                 required=False, label=_('Add Photos'))
 
-    def __init__(self, files=None, instance=None, *args, **kwargs):
-        super().__init__(files=files, *args, **kwargs)
+    def __init__(self, *args, **kwargs):
+        if not isinstance(self, forms.ModelForm):
+            kwargs.pop('instance')
+        super().__init__(*args, **kwargs)
 
     def _save_m2m(self):
+        if isinstance(self, forms.ModelForm):
+            super()._save_m2m()
         gallery = self.instance
         upload_id = self.cleaned_data['upload_id']
 
@@ -87,15 +91,7 @@ class UploadPhotosToNewGalleryForm(BaseUploadPhotosToGalleryForm, forms.ModelFor
 
 class BaseAdminUploadPhotosFormAdminUrl(BaseUploadPhotosToGalleryForm):
     new_photos = forms.FileField(widget=DropzoneWidget(options={'url': reverse_lazy('admin:image_upload')}),
-                                 required=False, label='')
-
-
-class UploadPhotosToNewGalleryAdminForm(BaseAdminUploadPhotosFormAdminUrl, UploadPhotosToNewGalleryForm):
-    pass
-
-
-class UploadPhotosToExistingGalleryAdminForm(BaseAdminUploadPhotosFormAdminUrl, UploadPhotosToExistingGalleryForm):
-    pass
+                                 required=False, label=_('Add Photos'), help_text=_('Add new photos to this gallery'))
 
 
 class SinglePhotoForm(forms.ModelForm):
@@ -118,12 +114,13 @@ class SinglePhotoForm(forms.ModelForm):
         return photo
 
 
-class GalleryForm(forms.ModelForm):
+class GalleryForm(BaseAdminUploadPhotosFormAdminUrl, forms.ModelForm):
     photos = forms.ModelMultipleChoiceField(PHOTO_MODEL.objects.filter(uploaded_photo__isnull=True),
                                             widget=FilteredSelectMultiple(_('Photos'), False), required=False,
-                                            label=_('Photos'),
+                                            label=_('Uploaded Photos'),
                                             help_text=_('Add already uploaded photos to this gallery'))
+
     class Meta:
         model = GALLERY_MODEL
-        exclude = ('id', 'slug')
-        fields = ('title', 'photos', 'description')
+        fields = ('title', 'description', 'photos', 'new_photos')
+        

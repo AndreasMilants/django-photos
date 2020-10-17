@@ -1,8 +1,7 @@
 from django.http import HttpResponse
 from django.urls import reverse_lazy
 from django.views import generic, View
-from .forms import UploadPhotosToNewGalleryForm, UploadPhotosToExistingGalleryAdminForm, \
-    UploadPhotosToNewGalleryAdminForm
+from .forms import UploadPhotosToNewGalleryForm
 from .models import PHOTO_MODEL, GALLERY_MODEL, UploadedPhotoModel, USE_CELERY
 from django.core.exceptions import ImproperlyConfigured
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
@@ -83,6 +82,10 @@ class UploadPhotoWithPermissionApiView(LoginRequiredMixin, PermissionRequiredMix
     permission_required = (CREATE_PHOTO_PERMISSION_NAME,)
 
 
+class UploadPhotoAdminApiView(UploadPhotoWithPermissionApiView, StaffRequiredMixin):
+    pass
+
+
 class GalleryListView(generic.ListView):
     model = GALLERY_MODEL
     context_object_name = 'gallery_list'
@@ -98,37 +101,4 @@ class GalleryPhotosView(generic.ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['gallery'] = GALLERY_MODEL.objects.get(slug=self.kwargs['slug'])
-        return context
-
-
-# AdminViews
-
-
-class UploadPhotosAdminView(StaffRequiredMixin, UploadPhotosWithPermissionView):
-    template_name = 'admin/photos/photomodel/upload_photos.html'
-    success_url = reverse_lazy('admin:{}_{}_changelist'.format(GALLERY_APP_LABEL, GALLERY_MODEL_NAME))
-    form_class = UploadPhotosToExistingGalleryAdminForm
-    extra_context_func = None
-
-    def get_success_url(self):
-        return self.success_url
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if self.extra_context_func is not None:
-            return self.extra_context_func(context)
-        return context
-
-
-class UploadGalleryAdminView(UploadPhotosAdminView):
-    form_class = UploadPhotosToNewGalleryAdminForm
-    success_url = reverse_lazy('admin:{}_{}_changelist'.format(GALLERY_APP_LABEL, GALLERY_MODEL_NAME))
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data()
-        context['title'] = _('Create new gallery')
-        context['app_label'] = GALLERY_MODEL._meta.app_config.verbose_name
-        context['opts'] = GALLERY_MODEL._meta
-        context['has_change_permission'] = 'photos.change_{}'.format(GALLERY_MODEL_NAME)
-        context['has_permission'] = True
         return context

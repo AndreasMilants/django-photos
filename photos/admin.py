@@ -5,7 +5,7 @@ from django.template.response import TemplateResponse
 from django.contrib.admin import helpers
 from .models import PHOTO_MODEL, GALLERY_MODEL
 from django.urls import path
-from .views import UploadPhotoApiView, UploadPhotosAdminView, UploadGalleryAdminView
+from .views import UploadPhotoAdminApiView
 from .forms import SinglePhotoForm, GalleryForm
 from django.utils.translation import ugettext_lazy as _
 from django.db.models import Count
@@ -22,22 +22,12 @@ class PhotoAdmin(admin.ModelAdmin):
     list_per_page = 20
     list_display = ('image_filename', 'admin_thumbnail_tag')
     form = SinglePhotoForm
-    change_list_template = 'admin/photos/photomodel/change_list.html'
 
     def has_add_permission(self, request):
         return False
 
     def get_queryset(self, request):
         return PHOTO_MODEL.objects.filter(uploaded_photo__isnull=True)
-
-    def get_urls(self):
-        custom_urls = [
-            path('upload-photos/', UploadPhotosAdminView.as_view(
-                success_url=reverse_lazy('admin:{}_{}_changelist'.format(PHOTO_APP_LABEL, PHOTO_MODEL_NAME)),
-                extra_context_func=self.photo_admin_context),
-                 name='images_upload_photo'),
-        ]
-        return custom_urls + super().get_urls()
 
     @staticmethod
     def photo_admin_context(context):
@@ -60,7 +50,6 @@ class GalleryAdmin(admin.ModelAdmin):
     list_display = ('__str__', 'random_photo_tag', 'count_photos')
     form = GalleryForm
     actions = ('delete_with_photos',)
-    change_list_template = 'admin/photos/gallerymodel/change_list.html'
 
     def get_queryset(self, request):
         return GALLERY_MODEL.objects.all().annotate(count_photos=Count('photos'))
@@ -72,12 +61,8 @@ class GalleryAdmin(admin.ModelAdmin):
 
     def get_urls(self):
         custom_urls = [
-            path('upload-gallery/', UploadGalleryAdminView.as_view(),
-                 name='gallery_upload'),
             path('delete-with-photos/', self._delete_with_photos, name='delete_with_photos'),
-            path('upload-photos/', UploadPhotosAdminView.as_view(extra_context_func=self.gallery_admin_context),
-                 name='images_upload'),
-            path('upload-photo/', UploadPhotoApiView.as_view(), name='image_upload')
+            path('upload-photo/', UploadPhotoAdminApiView.as_view(), name='image_upload')
         ]
         return custom_urls + super().get_urls()
 
