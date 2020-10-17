@@ -7,7 +7,6 @@ import os
 from .utils import handle_zip
 from .widgets import DropzoneWidget
 from django.contrib.admin.widgets import FilteredSelectMultiple
-from django.forms.utils import ErrorList
 
 if USE_CELERY:
     from .models import UploadIdsToGallery, TempZipFile
@@ -21,10 +20,9 @@ class BaseUploadPhotosToGalleryForm(forms.Form):
 
     def __init__(self, files=None, instance=None, *args, **kwargs):
         super().__init__(files=files, *args, **kwargs)
-        self.files = files
 
-    def save(self, commit=True):
-        gallery = self.cleaned_data['gallery']
+    def _save_m2m(self):
+        gallery = self.instance
         upload_id = self.cleaned_data['upload_id']
 
         if self.files:  # Javascript is disabled in the browser
@@ -41,12 +39,12 @@ class BaseUploadPhotosToGalleryForm(forms.Form):
                     photo = PHOTO_MODEL(image=file)
                     photo.save()
                     photos.append(photo)
-            if gallery is not None and commit:
+            if gallery is not None:
                 gallery.photos.add(*photos)
         else:  # Normal save (when user has js enabled)
             # Should make sure we delete the same uploaded_models as photos we added to the gallery, because of celery
             u_m = UploadedPhotoModel.objects.filter(upload_id=upload_id).select_related('photo').only('id', 'photo_id')
-            if gallery is not None and commit:
+            if gallery is not None:
                 gallery.photos.add(*[uploaded_model.photo for uploaded_model in u_m])
             u_m.delete()
 
@@ -54,27 +52,37 @@ class BaseUploadPhotosToGalleryForm(forms.Form):
             # This model is used because photos from zip_files might not be created yet upon completion of this function
             UploadIdsToGallery.objects.create(upload_id=upload_id, gallery=gallery)
 
-        return gallery
+    def save(self, commit=True):
+        if isinstance(self, forms.ModelForm):
+            return super().save(commit=commit)
+        if self.errors:
+            raise ValueError(
+                "The %s could not be %s because the data didn't validate." % (
+                    self.instance._meta.object_name,
+                    'created' if self.instance._state.adding else 'changed',
+                )
+            )
+        if commit:
+            self._save_m2m()
+        else:
+            self.save_m2m = self._save_m2m
+        return self.instance
 
 
 class UploadPhotosToExistingGalleryForm(BaseUploadPhotosToGalleryForm):
     gallery = forms.ModelChoiceField(queryset=GALLERY_MODEL.objects.all(), required=False, help_text=_(
         'Add these photos to an existing gallery or leave this empty.'))
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def clean(self):
+        cleaned_data = super().clean()
+        self.instance = cleaned_data['gallery']
+        return cleaned_data
 
 
 class UploadPhotosToNewGalleryForm(BaseUploadPhotosToGalleryForm, forms.ModelForm):
     class Meta:
         model = GALLERY_MODEL
         exclude = ('id', 'photos', 'slug')
-
-    def save(self, commit=True):
-        gallery = forms.ModelForm.save(self, commit=commit)
-        self.cleaned_data['gallery'] = gallery
-        BaseUploadPhotosToGalleryForm.save(self, commit=commit)
-        return gallery
 
 
 class BaseAdminUploadPhotosFormAdminUrl(BaseUploadPhotosToGalleryForm):
