@@ -51,7 +51,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'django_photos.urls'
+ROOT_URLCONF = 'django_photos.django_photos.urls'
 
 TEMPLATES = [
     {
@@ -70,7 +70,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'django_photos.wsgi.application'
+WSGI_APPLICATION = 'django_photos.django_photos.wsgi.application'
 
 
 # Database
@@ -133,3 +133,8 @@ STATICFILES_FINDERS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+
+def get_settings():
+    variables = globals()
+    settings = {key: variables[key] for key in variables if key.isupper()}
+    return settings
