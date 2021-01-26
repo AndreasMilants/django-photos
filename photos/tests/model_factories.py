@@ -1,3 +1,5 @@
+from zipfile import ZipFile
+
 import factory
 from ..models import GALLERY_MODEL, PHOTO_MODEL
 from django.utils.text import slugify
@@ -11,6 +13,16 @@ def get_image_file(name='test.png', ext='png', size=(2000, 2000)):
     file_obj = BytesIO()
     image = Image.new("RGB", size=size, color=color)
     image.save(file_obj, ext)
+    file_obj.seek(0)
+    return File(file_obj, name=name)
+
+
+def get_zip_file(name='test.zip', images=(get_image_file(),)):
+    file_obj = BytesIO()
+    with ZipFile(file_obj, mode='w') as zf:
+        for image in images:
+            zf.writestr(image.name, image.read())
+
     file_obj.seek(0)
     return File(file_obj, name=name)
 

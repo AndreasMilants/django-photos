@@ -1,26 +1,24 @@
-from .helpers import PhotologueBaseTest
+from .helpers import PhotologueBaseTest, GalleryAndPhotoTest
 from .model_factories import GalleryFactory, PhotoFactory
 from ..models import PHOTO_MODEL, IMAGE_SIZES, UPLOAD_TO
 import os
 
 
-class GalleryTest(PhotologueBaseTest):
-
+class GalleryTest(GalleryAndPhotoTest):
     def setUp(self):
         # Create a gallery with 2 photos
         super().setUp()
-        self.test_gallery = GalleryFactory()
         self.p2 = PhotoFactory()
-        self.test_gallery.photos.add(self.p1, self.p2)
+        self.g1.photos.add(self.p1, self.p2)
 
     def tearDown(self):
-        super(GalleryTest, self).tearDown()
+        super().tearDown()
         self.p2.delete()
 
     def test_random_photo(self):
         """Method 'sample' should return a random queryset of photos from the
         gallery."""
-        photo = self.test_gallery.get_random_photo()
+        photo = self.g1.get_random_photo()
 
         self.assertIn(photo, [self.p1, self.p2])
 

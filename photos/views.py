@@ -2,13 +2,12 @@ from django.http import HttpResponse
 from django.urls import reverse_lazy
 from django.views import generic, View
 from .forms import UploadPhotosToNewGalleryForm
-from .models import PHOTO_MODEL, GALLERY_MODEL, UploadedPhotoModel, USE_CELERY
+from .models import PHOTO_MODEL, GALLERY_MODEL
 from django.core.exceptions import ImproperlyConfigured
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.utils.translation import ugettext_lazy as _
-import os
-from .utils import handle_zip
 from .mixins import StaffRequiredMixin
+from photos.photo_processors.base_processor import get_photo_processor, PhotoProcessingError
 
 PHOTO_APP_LABEL = PHOTO_MODEL._meta.app_label
 GALLERY_APP_LABEL = GALLERY_MODEL._meta.app_label
@@ -18,10 +17,6 @@ GALLERY_MODEL_NAME = GALLERY_MODEL._meta.model_name
 
 CREATE_PHOTO_PERMISSION_NAME = '{}.add_{}'.format(PHOTO_APP_LABEL, PHOTO_MODEL_NAME)
 CREATE_GALLERY_PERMISSION_NAME = '{}.add_{}'.format(GALLERY_APP_LABEL, GALLERY_MODEL_NAME)
-
-if USE_CELERY:
-    from .models import TempZipFile
-    from .tasks import parse_zip
 
 
 class UploadPhotosView(generic.CreateView):
@@ -61,21 +56,12 @@ class UploadPhotoApiView(View):
         try:
             file = request.FILES.get('file')
             upload_id = request.POST.get('upload_id')
-            name, extension = os.path.splitext(file.name)
-            if extension == '.zip':
-                if USE_CELERY:
-                    temp = TempZipFile.objects.create(file=file)
-                    parse_zip.delay(temp.id, upload_id)
-                else:
-                    handle_zip(file, upload_id)
-            else:
-                photo = PHOTO_MODEL(image=file)
-                photo.save()
-                UploadedPhotoModel.objects.create(photo=photo, upload_id=upload_id)
+            get_photo_processor().handle_file(file, upload_id)
             return HttpResponse(status=201)
+        except PhotoProcessingError as e:
+            return HttpResponse(_(e.message), status=500)
         except Exception as e:
-            print(e)
-            return HttpResponse(_('Could not process file'), status=500)
+            return HttpResponse(_('Something unexpected happened while processing the file'), status=500)
 
 
 class UploadPhotoWithPermissionApiView(LoginRequiredMixin, PermissionRequiredMixin, UploadPhotoApiView):

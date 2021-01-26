@@ -1,5 +1,5 @@
 from django.test import TestCase
-from .model_factories import PhotoFactory
+from .model_factories import PhotoFactory, GalleryFactory
 
 
 class PhotologueBaseTest(TestCase):
@@ -7,5 +7,14 @@ class PhotologueBaseTest(TestCase):
         self.p1 = PhotoFactory()
 
     def tearDown(self):
-        pass
         self.p1.delete()
+
+
+class GalleryAndPhotoTest(PhotologueBaseTest):
+    def setUp(self):
+        super().setUp()
+        self.g1 = GalleryFactory()
+
+    def tearDown(self):
+        super().tearDown()
+        self.g1.delete()

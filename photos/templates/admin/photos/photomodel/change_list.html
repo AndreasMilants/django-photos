@@ -2,9 +2,4 @@
 {% load i18n %}
 {% block object-tools-items %}
     {{ block.super }}
-    <li>
-        <a href="{% url "admin:images_upload_photo" %}" class="addlink">
-            {% trans "Upload photos" %}
-        </a>
-    </li>
 {% endblock %}

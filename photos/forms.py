@@ -1,16 +1,11 @@
 from django import forms
 from django.utils.translation import ugettext_lazy as _
-from .models import GALLERY_MODEL, PHOTO_MODEL, UploadedPhotoModel, USE_CELERY
+from .models import GALLERY_MODEL, PHOTO_MODEL
 from uuid import uuid4
 from django.urls import reverse_lazy
-import os
-from .utils import handle_zip
 from .widgets import DropzoneWidget
 from django.contrib.admin.widgets import FilteredSelectMultiple
-
-if USE_CELERY:
-    from .models import UploadIdsToGallery, TempZipFile
-    from .tasks import parse_zip
+from photos.photo_processors.base_processor import get_photo_processor
 
 
 class BaseUploadPhotosToGalleryForm(forms.Form):
@@ -20,7 +15,7 @@ class BaseUploadPhotosToGalleryForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         if not isinstance(self, forms.ModelForm):
-            kwargs.pop('instance')
+            kwargs.pop('instance', None)
         super().__init__(*args, **kwargs)
 
     def _save_m2m(self):
@@ -30,31 +25,11 @@ class BaseUploadPhotosToGalleryForm(forms.Form):
         upload_id = self.cleaned_data['upload_id']
 
         if self.files:  # Javascript is disabled in the browser
-            photos = []
             for file in self.files.getlist('new_photos'):
-                name, extension = os.path.splitext(file.name)
-                if extension == '.zip':
-                    if USE_CELERY:
-                        temp = TempZipFile.objects.create(file=file)
-                        parse_zip.delay(temp.id, upload_id)
-                    else:
-                        handle_zip(file, upload_id)
-                else:
-                    photo = PHOTO_MODEL(image=file)
-                    photo.save()
-                    photos.append(photo)
-            if gallery is not None:
-                gallery.photos.add(*photos)
-        else:  # Normal save (when user has js enabled)
-            # Should make sure we delete the same uploaded_models as photos we added to the gallery, because of celery
-            u_m = UploadedPhotoModel.objects.filter(upload_id=upload_id).select_related('photo').only('id', 'photo_id')
-            if gallery is not None:
-                gallery.photos.add(*[uploaded_model.photo for uploaded_model in u_m])
-            u_m.delete()
+                get_photo_processor().handle_file(file, upload_id)
 
-        if USE_CELERY and gallery is not None:
-            # This model is used because photos from zip_files might not be created yet upon completion of this function
-            UploadIdsToGallery.objects.create(upload_id=upload_id, gallery=gallery)
+        if gallery is not None:
+            get_photo_processor().link_photos_to_gallery(upload_id, gallery)
 
     def save(self, commit=True):
         if isinstance(self, forms.ModelForm):
@@ -79,7 +54,7 @@ class UploadPhotosToExistingGalleryForm(BaseUploadPhotosToGalleryForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        self.instance = cleaned_data['gallery']
+        self.instance = cleaned_data.get('gallery', None)
         return cleaned_data
 
 
@@ -123,4 +98,3 @@ class GalleryForm(BaseAdminUploadPhotosFormAdminUrl, forms.ModelForm):
     class Meta:
         model = GALLERY_MODEL
         fields = ('title', 'description', 'photos', 'new_photos')
-        

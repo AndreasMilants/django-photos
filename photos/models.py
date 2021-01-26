@@ -27,7 +27,7 @@ _IMAGE_SIZES = getattr(settings, 'PHOTOS_IMAGE_SIZES', {'display': (500, 500),
                                                         'hd': (1920, 1080)})  # (Width, Height)
 IMAGE_SIZES.update(_IMAGE_SIZES)
 _SIZE_METHOD_MAP = {}
-USE_CELERY = getattr(settings, 'PHOTOS_USE_CELERY', False)
+USE_ASYNC = getattr(settings, 'PHOTOS_USE_ASYNC', False)
 UPLOAD_TO = getattr(settings, 'PHOTOS_UPLOAD_TO', 'photos')
 
 
@@ -124,26 +124,18 @@ class ImageModel(models.Model):
 
     def delete_all_files(self):
         self.image.close()
-        if USE_CELERY:
-            from .tasks import delete_files
-            delete_files.delay(self.image.name)
-        else:
-            self.delete_files(self.image.name)
+        self.delete_files(self.image.name)
 
     def _update_sizes(self, old_image_filename):
         if old_image_filename is not None:
             self._delete_sizes(old_image_filename)
         self._create_sizes()
 
-    def update_sizes(self, running_in_task=False):
-        if USE_CELERY and not running_in_task:
-            from .tasks import update_sizes
-            update_sizes.delay(self.id)
-        else:
-            self._update_sizes(self._old_image_filename())
+    def update_sizes(self):
+        self._update_sizes(self._old_image_filename())
 
-    def save(self, *args, running_in_task=False, **kwargs):
-        should_update = (self._old_image != self.image or self._state.adding) and not running_in_task
+    def save(self, *args, process=True, **kwargs):
+        should_update = (self._old_image != self.image or self._state.adding) and process
         super().save(*args, **kwargs)  # Have to save first because filename might change upon save
         if should_update:
             self.update_sizes()
@@ -249,11 +241,11 @@ class UploadedPhotoModel(UpdateTimesModel):
     upload_id = models.UUIDField(db_index=True, verbose_name=_('upload id'), null=False)
 
 
-if USE_CELERY:
+if USE_ASYNC:
     class UploadIdsToGallery(UpdateTimesModel):
         """
         This table temporarily saves all the links of upload_ids to galleries.
-        This is only used when using celery, because the uploaded_photo_model might already be checked before all
+        This is only used when using async, because the uploaded_photo_model might already be checked before all
         rows were created.
         After using this to link photos to a gallery, you should also set confirmed to True
         """
