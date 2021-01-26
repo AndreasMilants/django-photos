@@ -1,6 +1,6 @@
 from celery import shared_task
 from .models import PHOTO_MODEL, TempZipFile
-from photos.photo_processors.utils import handle_zip
+from .photo_processors.utils import handle_zip
 
 
 @shared_task(name='photos.tasks.create_sizes', max_retries=5)

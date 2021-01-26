@@ -5,7 +5,7 @@ from io import BytesIO
 from PIL import Image
 from django.core.files.base import ContentFile
 
-from photos.models import PHOTO_MODEL, UploadedPhotoModel
+from ..models import PHOTO_MODEL, UploadedPhotoModel
 
 
 def handle_zip(file, upload_id):

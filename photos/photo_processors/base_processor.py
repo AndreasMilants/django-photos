@@ -1,7 +1,7 @@
 import os
 from django.conf import settings
-from photos.photo_processors.utils import handle_zip
-from photos.models import PHOTO_MODEL, UploadedPhotoModel
+from ..photo_processors.utils import handle_zip
+from ..models import PHOTO_MODEL, UploadedPhotoModel
 
 
 class PhotoProcessingError(Exception):

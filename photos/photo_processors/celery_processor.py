@@ -1,6 +1,6 @@
-from photos.photo_processors.base_processor import BasePhotoProcessor
-from photos.models import PHOTO_MODEL, UploadedPhotoModel, TempZipFile, UploadIdsToGallery
-from photos.photo_processors.celery_tasks import parse_zip, delete_photo, delete_photo_files
+from ..photo_processors.base_processor import BasePhotoProcessor
+from ..models import PHOTO_MODEL, UploadedPhotoModel, TempZipFile, UploadIdsToGallery
+from ..photo_processors.celery_tasks import parse_zip, delete_photo, delete_photo_files
 
 
 class CeleryProcessor(BasePhotoProcessor):

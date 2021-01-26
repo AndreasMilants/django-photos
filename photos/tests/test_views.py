@@ -1,12 +1,9 @@
-from io import BytesIO
-
 from django.test import TestCase
 from django.urls import reverse_lazy
-from photos.models import PHOTO_MODEL, UploadedPhotoModel, IMAGE_SIZES
+from ..models import PHOTO_MODEL, UploadedPhotoModel, IMAGE_SIZES
 from .model_factories import get_image_file, get_zip_file
 import time
 from uuid import uuid4
-from zipfile import ZipFile
 
 
 class UploadPhotoApiViewTest(TestCase):
@@ -44,6 +41,3 @@ class UploadPhotoApiViewTest(TestCase):
             self.check_photo_ok_and_delete(photo)
 
         UploadedPhotoModel.objects.all().delete()
-
-
-

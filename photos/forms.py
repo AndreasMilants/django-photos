@@ -5,7 +5,7 @@ from uuid import uuid4
 from django.urls import reverse_lazy
 from .widgets import DropzoneWidget
 from django.contrib.admin.widgets import FilteredSelectMultiple
-from photos.photo_processors.base_processor import get_photo_processor
+from .photo_processors.base_processor import get_photo_processor
 
 
 class BaseUploadPhotosToGalleryForm(forms.Form):

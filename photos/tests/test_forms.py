@@ -1,6 +1,6 @@
 from .helpers import GalleryAndPhotoTest
-from photos.forms import *
-from photos.models import UploadedPhotoModel
+from ..forms import *
+from ..models import UploadedPhotoModel
 from uuid import uuid4
 
 

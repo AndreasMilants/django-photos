@@ -7,7 +7,7 @@ from django.core.exceptions import ImproperlyConfigured
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.utils.translation import ugettext_lazy as _
 from .mixins import StaffRequiredMixin
-from photos.photo_processors.base_processor import get_photo_processor, PhotoProcessingError
+from .photo_processors.base_processor import get_photo_processor, PhotoProcessingError
 
 PHOTO_APP_LABEL = PHOTO_MODEL._meta.app_label
 GALLERY_APP_LABEL = GALLERY_MODEL._meta.app_label

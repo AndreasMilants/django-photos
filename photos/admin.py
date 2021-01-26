@@ -9,7 +9,7 @@ from .views import UploadPhotoAdminApiView
 from .forms import SinglePhotoForm, GalleryForm
 from django.utils.translation import ugettext_lazy as _
 from django.db.models import Count
-from photos.photo_processors.base_processor import get_photo_processor, PhotoProcessingError
+from .photo_processors.base_processor import get_photo_processor, PhotoProcessingError
 from django.contrib import messages
 
 PHOTO_APP_LABEL = PHOTO_MODEL._meta.app_label
